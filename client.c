@@ -1,39 +1,61 @@
-/****************** CLIENT CODE ****************/
+#include<stdio.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<stdlib.h>
+#include<unistd.h>
 
-#include <stdio.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
+int main()
+{
+    int sd,con,port,i,Res;
+    char content[30];
+    struct sockaddr_in cli;
 
-int main(){
-  int clientSocket;
-  char buffer[1024];
-  struct sockaddr_in serverAddr;
-  socklen_t addr_size;
+    if((sd=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP))==-1)
+    {
+        printf("\nSocket problem");
+        return 0;
+    }
 
-  /*---- Create the socket. The three arguments are: ----*/
-  /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
-  clientSocket = socket(PF_INET, SOCK_STREAM, 0);
-  
-  /*---- Configure settings of the server address struct ----*/
-  /* Address family = Internet */
-  serverAddr.sin_family = AF_INET;
-  /* Set port number, using htons function to use proper byte order */
-  serverAddr.sin_port = htons(7891);
-  /* Set IP address to localhost */
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-  /* Set all bits of the padding field to 0 */
-  memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
+    bzero((char*)&cli,sizeof(cli));
+    cli.sin_family = AF_INET;
+    printf("ENTER PORT NO:\n");
+    scanf("%d",&port);
+    cli.sin_port=htons(port);
+    cli.sin_addr.s_addr=htonl(INADDR_ANY);
 
-  /*---- Connect the socket to the server using the address struct ----*/
-  addr_size = sizeof serverAddr;
-  connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
+    con=connect(sd,(struct sockaddr*)&cli,sizeof(cli));
 
-  /*---- Read the message from the server into the buffer ----*/
-  recv(clientSocket, buffer, 1024, 0);
+    if(con==-1)
+    {
+        printf("\nConnection error");
+        return 0;
+    }
+    if(fork())
+      {
+        printf("enter msg");
+        scanf("%s",content);
+          while(strcmp(content,"exit")!=0)
+              {
+               send(sd,content,30,0);
+                scanf("%s",content); 
+              }   
+     }
+   else
+       {
+          i=recv(sd,content,30,0);
+       while(strcmp(content,"exit")!=0)
+        {
+            printf("\nServer: %s\n",content);
+            i=recv(sd,content,30,0);
+        }
+     
+              
+   }
+    close(sd); 
+      return 0;
 
-  /*---- Print the received message ----*/
-  printf("Data received: %s",buffer);   
-
-  return 0;
 }
+
+
